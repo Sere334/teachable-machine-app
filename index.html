@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Riconoscimento Immagine Teachable Machine</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.8.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+</head>
+<body>
+  <h1>Riconoscimento con Teachable Machine</h1>
+  <p id="status">Caricamento modello...</p>
+  <img id="inputImg" style="max-width:300px; display:none;" />
+  <h2>Classe riconosciuta: <span id="result">-</span></h2>
+
+  <script>
+    // Il link al tuo modello
+    const URL = "https://teachablemachine.withgoogle.com/models/WhDCq50T1/";
+
+    let model, webcam, maxPredictions;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      document.getElementById("status").innerText = "Modello caricato!";
+
+      // Leggi la base64 dall'URL
+      const params = new URLSearchParams(window.location.search);
+      const base64img = params.get("img");
+      if (!base64img) {
+        document.getElementById("status").innerText = "Passa l'immagine in base64 con il parametro ?img=...";
+        return;
+      }
+
+      // Mostra l'immagine
+      const img = document.getElementById("inputImg");
+      img.src = base64img;
+      img.style.display = "block";
+
+      img.onload = async () => {
+        // Riconosci immagine
+        const prediction = await model.predict(img);
+        // Trova la classe con la probabilità maggiore
+        let bestClass = prediction[0];
+        for (let i = 1; i < prediction.length; i++) {
+          if (prediction[i].probability > bestClass.probability) {
+            bestClass = prediction[i];
+          }
+        }
+        document.getElementById("result").innerText = bestClass.className + " (" + (bestClass.probability*100).toFixed(1) + "%)";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
